@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<!--
+Thanks to this person for the graph - https://codepen.io/mr_brunocastro/pen/GJRqJa
+-->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Solver to the easiest math problem no one can solve</title>
+    <style>
+        .steps:last-child {
+            color:red;
+        }
+        * {
+            outline:none;
+            font-family:arial;
+            user-select:none;
+        }
+        details > summary {
+            padding: 4px;
+            width: 200px;
+            background-color: #eeeeee;
+            border: none;
+            box-shadow: 1px 1px 2px #bbbbbb;
+            cursor: pointer;
+        }
+
+        details > p {
+            background-color: #eeeeee;
+            padding: 4px;
+            margin: 0;
+            box-shadow: 1px 1px 2px #bbbbbb;
+        }
+        
+        details > canvas {
+            background-color: #eeeeee;
+            padding: 4px;
+            margin: 0;
+            box-shadow: 1px 1px 2px #bbbbbb;
+        }
+        
+        details > h1 {
+            background-color: #eeeeee;
+            padding: 4px;
+            margin: 0;
+            box-shadow: 1px 1px 2px #bbbbbb;
+        }
+    </style>
+    </head>
+    <body>
+        <p id="steps">0 Steps to get to 1 from the number ?</p>
+        <input id="num" type="number"><button onclick="random()">Random Number</button>
+        <div>
+            <br>
+            <details id="output">
+                <summary>Work</summary>
+            </details>
+            <br>
+            <details id="info">
+                <summary>Information</summary>
+            </details>
+            <br>
+            <details>
+                <summary>Graph</summary>
+                <br>
+                <canvas id='canvas' width='960' height='700'></canvas>
+            </details>
+            <br>
+            <details>
+                <summary>Other</summary>
+                <h1>How this works</h1>
+                <p>First, you have to pick a number in-between -infinity and infinity. If that number is even, divide it by 2, then if it is odd, multiply by 3 then add one to it. Then repeat that proccess until you have the 4-2-1 loop.</p>
+            </details>
+        </div>
+        <br>
+    </body>
+    <script type>
+        var num = document.getElementById("num");
+        var output = document.getElementById("output");
+        var steps = document.getElementById("steps");
+        var info = document.getElementById("info");
+        var nums = [];
+        var nums2 = [];
+        var nums3 = [];
+        function oe (number) {
+            var is = number % 2;
+            if (is == 1) {
+                return "odd";
+            }else {
+                return "even";
+            }
+        }
+        var valores = [];
+        var infos = {
+            peak: 0,
+            steps: 0,
+            drops: 0,
+            rises: 0,
+            slope: {
+                drop: [],
+                rise: [],
+            },
+        };
+        function average(a) {
+            var sum = 0;
+            for (var i = 0; i < a.length; i++) { 
+                sum += a[i];
+            }
+            return sum / a.length;
+        }
+        var drop = [];
+        var rise = [];
+        function does () {
+            setTimeout(function () {
+                if (num.value != "") {
+                    nums = [Number(num.value)];
+                    nums2 = [];
+                    nums3 = [];
+                }else {
+                    nums = [];
+                    nums2 = [];
+                    nums3 = [];
+                }
+                for (var i = 0; i < nums.length; i++) {
+                    if (Number(nums[i]) != 1 || i == 0) {
+                        if (oe(nums[i]) == "even") {
+                            nums.push(Number(nums[i])/2);
+                            nums2.push(nums[i].toString()+" / 2 = ");
+                        }else {
+                            nums.push(Number(nums[i])*3+1)
+                            nums2.push(nums[i].toString()+" * 3 + 1 = ");
+                        }
+                    }
+                }
+                for (var i = 0; i < nums.length - 1; i++) {
+                    nums3.push("<p class='steps'>"+nums2[i] + nums[i + 1]+"</p>")
+                }
+                output.innerHTML = "<summary>Work</summary>"+nums3.join("");
+                steps.innerHTML = nums3.length+" Steps to get to 1 from the number "+num.value;
+                infos.peak = Math.max.apply(Math, nums);
+                infos.steps = nums.length;
+                for (var i = 0; i < nums.length; i++) {
+                    if (Number(nums[i]) > nums[i + 1] && i != nums.length) {
+                        infos.drops++;
+                        drop.push(Number(nums[i]));
+                    }
+                    if (Number(nums[i]) < nums[i + 1] && i != nums.length) {
+                        infos.rises++;
+                        rise.push(Number(nums[i]));
+                    }
+                }
+                valores = nums;
+                infos.slope.rise = average(rise);
+                infos.slope.drop = average(drop);
+                info.innerHTML = "<summary>Information</summary><p>Peak: "+infos.peak+"</p><p>Steps: "+(infos.steps - 1)+"</p><p>Drops: "+infos.drops+"</p><p>Rises: "+infos.rises+"</p><p>Average Drop: "+infos.slope.drop+"</p><p>Average Rise: "+infos.slope.rise+"</p>";
+            }, 10)
+            setTimeout(function () {
+                infos.peak = 0;
+                infos.steps = 0;
+                infos.drops = 0;
+                infos.rises = 0;
+                infos.slope.rise = 0;
+                infos.slope.drop = 0;
+            }, 100)
+        };
+        num.onkeydown = function () {
+            does();
+        }
+        function random () {
+            num.value = Math.round(Math.random() * 500);
+            does();
+        }
+        //graph code
+        function init () {
+            setInterval(draw,30);
+        }
+        var pontos = [];
+        var diferenca =[];
+
+  
+        function drawGrid(width,height,colun,line) {
+        var ctx = document.getElementById('canvas').getContext('2d');
+        
+            ctx.fillRect(0,0,width,height);
+            ctx.save();
+            for (var c=1; c<(width/colun); c++) {
+                ctx.beginPath();
+                ctx.moveTo(c*colun,0);
+                ctx.lineTo(c*colun,height);
+                ctx.stroke();
+            }
+            for (var l=1; l<(height/line); l++) {
+                ctx.beginPath();
+                ctx.moveTo(0,l*line);
+                ctx.lineTo(width, l*line);
+                ctx.stroke();
+            }
+        }
+        function drawingLines (width,points,c) {
+            var ctx = document.getElementById('canvas').getContext('2d');
+            ctx.beginPath();
+            ctx.globalAlpha = c*0.01;
+            ctx.moveTo(((c-1)*width+10),points[c-1]+400);
+            ctx.lineTo(c*width+10,points[c]+400);
+            ctx.lineTo(c*width+10,700);
+            ctx.lineTo(((c-1)*width+10),700);
+            ctx.lineTo(((c-1)*width+10),points[c-1]+400);
+            ctx.fill();
+            ctx.beginPath();
+             ctx.globalAlpha = 1;
+            ctx.moveTo(((c-1)*width+10),points[c-1]+400);
+            ctx.font = '10px serif';
+            ctx.fillStyle = "white";
+            var texts = [];
+            for (var i = 0; i < valores.length; i++) {
+                if (valores[i].length == 1) {
+                    texts.push(2.5);
+                }else {
+                    texts.push(4);
+                }
+            }
+            ctx.fillText(valores[c - 1], ((c-1)*width+10)-texts[c - 1], points[c-1]+390);
+            ctx.fillText("|", 488, 690);
+            ctx.lineTo(c*width+10,points[c]+800);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.save();
+            ctx.fillStyle=ctx.strokeStyle;
+            ctx.arc(c*width+10,points[c]+400,3,0,Math.PI*2)
+            ctx.fill();
+            ctx.restore();
+        }
+    
+
+        function draw() {
+            var ctx = document.getElementById('canvas').getContext('2d');
+        
+            //////////////// setupBackground
+            ctx.fillStyle ="#1d1f20";
+            ctx.strokeStyle ="#333";
+            ctx.save();
+            drawGrid(560,700,10,10);
+         
+            
+            for (var c=0; c<valores.length; c++) { 
+                if(isNaN(pontos[c])){
+                pontos[c]=300;
+            }
+            ctx.lineWidth=1.4;
+            larg=480/(valores.length -1);
+            diferenca[c]=(300-valores[c])-pontos[c];
+            pontos[c]+=diferenca[c]/(c+1);
+            
+            //////////////// setupGraphic
+            ctx.strokeStyle ="#0ff";
+            ctx.fillStyle="#0ff";    
+            drawingLines (larg,pontos,c);
+        }
+        }
+        window.onload = init();
+        //alert("please add ?height=900 to the end of the link!");
+    </script>
+</html>
+<!--
+Not Many Lines of Code
+-->
